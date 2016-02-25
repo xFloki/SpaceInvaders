@@ -7,12 +7,15 @@ package Codigo;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
+import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
+import java.io.IOException;
 import java.util.ArrayList;
+import javax.imageio.ImageIO;
 import javax.swing.Timer;
 
 /**
@@ -31,12 +34,15 @@ public class VentanaJuego extends javax.swing.JFrame {
     Nave miNave = new Nave(ANCHOPANTALLA,8);
     ArrayList <Disparo> listaDisparos = new ArrayList();
     ArrayList <Marciano> listaMarcianos = new ArrayList();
+    ArrayList <Explosion> listaExplosiones = new ArrayList();
     
     int numeroDisparosEnPantalla = 0;
     int contador = 0; 
     boolean cambiaImagen = false;
     
     BufferedImage buffer = null;
+    Image plantilla = null;
+    
     boolean direccionMarcianos = false;
     
     Timer temporizador = new Timer(10, new ActionListener(){
@@ -52,12 +58,18 @@ public class VentanaJuego extends javax.swing.JFrame {
     public VentanaJuego() {
         initComponents();
         this.setSize(ANCHOPANTALLA, ALTOPANTALLA);
+        try{
+            plantilla = ImageIO.read(getClass().getResource("/imagenes/invaders.png"));
+        } 
+        catch (IOException ex){}
+         plantilla = plantilla.getScaledInstance((int)plantilla.getWidth(null)/3, (int)plantilla.getHeight(null)/3, Image.SCALE_SMOOTH);
+        
         //creamos los marcianos y los añadimos a la lista
         for(int i=0; i<5; i++){
             for(int j=0; j<10; j++) {
                 Marciano miMarciano = new Marciano();
-                miMarciano.setX(j*( miMarciano.imagen.getWidth(null) + 14) );
-                miMarciano.setY(i*(miMarciano.imagen.getHeight(null) +5 ));
+                miMarciano.setX(j*( miMarciano.getAncho() + 14) );
+                miMarciano.setY(i*(miMarciano.getAlto() +5 )+30);
                 listaMarcianos.add(miMarciano);
                 
             }
@@ -82,7 +94,7 @@ public class VentanaJuego extends javax.swing.JFrame {
             //recoloco el marciano
             aux.mueve(direccionMarcianos);
 
-            if (aux.getX() + aux.imagen.getWidth(null)+ 15 > ANCHOPANTALLA){
+            if (aux.getX() + aux.getAncho()+ 15 > ANCHOPANTALLA){
                 cambia = true;
             }
             if (aux.getX() <= 0){
@@ -93,16 +105,16 @@ public class VentanaJuego extends javax.swing.JFrame {
             //pinto el marciano
             //falta el sistema para saber si pinto la imagen 1 o la 2
      if(cambiaImagen){
-                g2.drawImage(aux.imagen, aux.getX(), aux.getY(), null);
+                aux.dibujaSprite(g2, plantilla, sprite);
      } else {
-         g2.drawImage(aux.imagen2, aux.getX(), aux.getY(), null);
+         aux.dibujaSprite(g2, plantilla, 2);
      }
             
         }
          if(cambia){          
                    for (Marciano aux: listaMarcianos){    
                        
-                        aux.setY(aux.getY()+ aux.imagen.getHeight(null)/2);
+                        aux.setY(aux.getY()+ aux.getAlto()/2);
                     }
             
           if (direccionMarcianos) {direccionMarcianos = false;}
@@ -123,7 +135,7 @@ public class VentanaJuego extends javax.swing.JFrame {
             if (aux.getY() <= -15){
             listaDisparos.remove(aux);
             }else{
-            g2.drawImage(aux.imagen, aux.getX(),aux.getY(), null);
+                aux.dibujaSprite(g2, plantilla, 1);
                 }
             }
     }
@@ -136,17 +148,39 @@ public class VentanaJuego extends javax.swing.JFrame {
          
          for(int j=0;j<listaDisparos.size(); j++){
              Disparo d = listaDisparos.get(j);
-             rectanguloDisparo.setFrame(d.getX(),d.getY(), d.imagen.getWidth(null), d.imagen.getHeight(null));
+             rectanguloDisparo.setFrame(d.getX(),d.getY(), d.getAncho(), d.getAlto());
              for(int i=0; i<listaMarcianos.size(); i++){
                  Marciano m = listaMarcianos.get(i);
-                 rectanguloMarciano.setFrame(m.getX(),m.getY(), m.imagen.getWidth(null), m.imagen.getHeight(null));
+                 rectanguloMarciano.setFrame(m.getX(),m.getY(), m.getAncho(), m.getAlto());
              if(rectanguloDisparo.intersects(rectanguloMarciano)){
+                 //creo una explosion y la añado en la posicion en la que
+                 //esta el marciano 
+                 Explosion e = new Explosion();
+                 e.setX(m.getX());
+                 e.setY(m.getY());
+                 listaExplosiones.add(e);
+                 //elimino al marciano y al disparo
                  listaDisparos.remove(d);
                  listaMarcianos.remove(m);
              }
              }
          } 
     }
+     private void pintaExplosiones(Graphics2D g2){
+            for (int i = 0; i < listaExplosiones.size(); i++) {
+                Explosion e = listaExplosiones.get(i);
+                //resto una de vida a la la explosión
+                e.setTiempoDeVida(e.getTiempoDeVida()-1);
+              
+            if(e.getTiempoDeVida() > 5){
+                e.dibujaSprite(g2, plantilla, 1);
+            } else if (e.getTiempoDeVida() > 0) {
+                   e.dibujaSprite(g2, plantilla, 2);
+     } else {
+                listaExplosiones.remove(e);
+            }
+            }
+     }
     
     private void bucleDelJuego(){
           contador++;
@@ -167,20 +201,22 @@ public class VentanaJuego extends javax.swing.JFrame {
         // recoloco la nave
         miNave.mueve();
         // recoloco la nave
+       
         
         pintaDisparos(g2); 
          pintaMarcianos(g2);
-         
+            chequeColision();
+            pintaExplosiones(g2);
                
           
         // pinto la nave
-        g2.drawImage(miNave.imagen, miNave.getX(), miNave.getY(), null);
+        miNave.dibujaSprite(g2, plantilla, 1);
         
         /////////////////////////////////////////////
         //apunto al jPanel y dibujo el buffer sobre el jPanel
         g2 = (Graphics2D) jPanel1.getGraphics();
         g2.drawImage(buffer, 0, 0,null);
-        chequeColision();
+     
         
     
     }

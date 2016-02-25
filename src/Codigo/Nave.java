@@ -5,9 +5,7 @@
  */
 package Codigo;
 
-import java.awt.Image;
-import java.io.IOException;
-import javax.imageio.ImageIO;
+
 
 /**
  *
@@ -23,15 +21,14 @@ public class Nave extends Sprite {
     private int velocidad;
     
     public Nave(int _anchoMundo, int _velocidad){
-        try {
-           imagen = ImageIO.read(getClass().getResource("/imagenes/nave.png"));
-           this.anchoMundo = _anchoMundo;
+          this.setAncho(75/3);
+       this.setAlto(55/3);
+       this.setFila(150/3);
+       this.setColumna(635/3);
+       this.anchoMundo = _anchoMundo;
+       
            this.velocidad = _velocidad;
-        }
-    
-        catch (IOException e) {
-            
-        }
+       
     }
     
 
@@ -41,7 +38,7 @@ public class Nave extends Sprite {
         if(this.pulsadoIzquierda && this.getX() >= 0){
             this.setX(this.getX() - velocidad);
         }
-        if(this.pulsadoDerecha && this.getX() < anchoMundo - (imagen.getWidth(null)+20)){
+        if(this.pulsadoDerecha && this.getX() < anchoMundo- getAncho() ){
             this.setX(this.getX() + velocidad);
         }
     }

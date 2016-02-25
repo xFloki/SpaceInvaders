@@ -5,10 +5,6 @@
  */
 package Codigo;
 
-import java.awt.Image;
-import java.io.IOException;
-import javax.imageio.ImageIO;
-
 /**
  *
  * @author Administrator
@@ -18,16 +14,14 @@ public class Marciano extends Sprite {
     
 
 public Marciano(){
-        try {
-           imagen = ImageIO.read(getClass().getResource("/imagenes/marcianito1.png"));
-           imagen2 = ImageIO.read(getClass().getResource("/imagenes/marcianito2.png"));
-//           this.altoMundo = _altoMundo;
+       this.setAncho(110/3);
+       this.setAlto(80/3);
+       this.setFila(19/3);
+       this.setColumna(15/3);
+       this.setFila2(165/3);
+       this.setColumna2(15/3);
         }
-        
-        catch (IOException e) {
-            
-        }
-    }
+    
 
    
     public void mueve(boolean _direccionMarciano){
